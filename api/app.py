@@ -3,18 +3,11 @@ import csv
 import io
 import pandas as pd
 import uuid
-from datetime import timedelta
-from flask_session import Session
 
 app = Flask(__name__)
-app.config['SESSION_TYPE'] = 'filesystem'  # Store session data on disk
-app.config['SESSION_PERMANENT'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
-app.secret_key = 'your_secret_key'  # Change this to a secure key
+app.secret_key = 'sanskar'  # Use a secure secret key
 
-Session(app)  # Initialize Flask-Session
-
-# Store user data in memory (Per session)
+# Store user data in memory (Temporary)
 user_data = {}
 
 def get_user_points():
@@ -22,7 +15,7 @@ def get_user_points():
     session_id = session.get('session_id')
     if not session_id:
         return []
-    return user_data.setdefault(session_id, [])
+    return user_data.get(session_id, [])
 
 def read_csv(file):
     """Read CSV and store points per user session."""
@@ -45,7 +38,7 @@ def read_csv(file):
         except Exception as e:
             print(f"Skipping row due to error: {e}")
 
-    # Store data for this session
+    # Store data for this session in memory
     user_data[session_id] = points
 
 @app.route('/')
@@ -54,10 +47,10 @@ def home():
 
 @app.route('/map')
 def index():
-    """Home route - Assigns session ID."""
+    """Assign a unique session ID if not set (Stored in Cookies)."""
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())  # Assign new session
-    return render_template('index.html', session_id=session['session_id'])
+    return render_template('index.html')
 
 @app.route('/get_points', methods=['GET'])
 def get_points():
