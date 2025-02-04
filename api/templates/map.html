@@ -4,375 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Map</title>
+
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <!-- Leaflet Draw Plugin -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-body {
-    font-family: 'Roboto', sans-serif;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    background-color: #000000;
-}
 
-#map {
-    height: 100vh;  /* Make the map take the full height of the viewport */
-    width: 100vw;   /* Make the map take the full width of the viewport */
-    position: absolute;
-    top: 0;
-    left: 0;
-}
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0px;
-}
-
-.btn {
-    padding: 12px 24px;
-    border: none;
-    background-color: #4CAF50;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
-    margin: 10px;
-}
-
-.btn:hover {
-    background-color: #00ff0d;
-}
-
-.upload-btn {
-    background-color: #2196F3;
-}
-
-.upload-btn:hover {
-    background-color: #1976D2;
-}
-
-.info {
-    background: rgba(255, 255, 255, 0.8);
-    padding: 7px;
-    margin-top: 1px;
-    border-radius: 10px;
-    font-size: 12px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    position: fixed;
-    bottom: 10px;
-    left: 10px;
-    z-index: 1000;
-}
-
-.context-menu {
-    display: none;
-    position: absolute;
-    background-color: white;
-    border: 1px solid #ccc;
-    padding: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    border-radius: 5px;
-}
-
-.context-menu-item {
-    padding: 10px;
-    cursor: pointer;
-    color: #333;
-}
-
-.context-menu-item:hover {
-    background-color: #f0f0f0;
-}
-
-.context-menu-item:active {
-    background-color: #ddd;
-}
-
-.file-input {
-    display: none;
-}
-
-.file-label {
-    background-color: #bb7b1b;
-    color: rgb(0, 0, 0);
-    padding: 3px 3px;
-    border: none;
-    font-size: 12px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
-    
-}
-
-.file-label:hover {
-    background-color: #ff8000;
-}
-
-/* Position the buttons at the bottom right corner */
-.map-controls {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-}
-
-
-.map-controls > * {
-    margin: 5px 0;  /* Add vertical margin between buttons */
-}
-
-.map-controls button {
-    background-color: #1f991b;
-    color: rgb(0, 0, 0);
-    padding: 3px 3px;
-    border: none;
-    font-size: 12px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
-}
-
-.map-controls button:hover {
-    background-color: #00ff0d;
-}
-
-    </style>
+    <!-- Load CSS from Flask Static Folder -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1 style="text-align:center; color: #333;">Interactive Map</h1>
-        <div id="map"></div>
-        <div class="map-controls">
-            <label for="csv-upload" class="file-label"> Upload CSV </label>
-            <input type="file" id="csv-upload" accept=".csv" class="file-input"/>
-            <button id="export" class="btn">Export </button>
-        </div>
-        <div id="coordinates-count" class="info">
-            Coordinates inside polygon: <span id="count">0</span>
-        </div>
+
+    <!-- Map -->
+    <div id="map"></div>
+
+    <!-- Map Controls -->
+    <div class="map-controls">
+        <label for="csv-upload" class="file-label">📂 Upload CSV</label>
+        <input type="file" id="csv-upload" accept=".csv" class="file-input" />
+        <button id="export">📤 Export CSV</button>
     </div>
 
+    <!-- Info Box -->
+    <div class="info">
+        📍 Points inside polygon: <span id="count">0</span>
+    </div>
+
+    <!-- Context Menu -->
     <div id="context-menu" class="context-menu">
-        <div class="context-menu-item" id="edit-name">Edit Name</div>
-        <div class="context-menu-item" id="edit-color">Edit Color</div>
+        <div class="context-menu-item" id="edit-name">✏ Edit Name</div>
     </div>
 
-    <script>
-        const map = L.map('map').setView([20.5937, 78.9629], 5);  // Center on India with zoom level 5
-        // Center on the US
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-        // Add OpenStreetMap tiles
-        L.tileLayer('http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}&s=Ga').addTo(map);
+    <!-- Leaflet Draw Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
-        // Initialize a feature group for drawn items
-        const drawnItems = new L.FeatureGroup();
-        map.addLayer(drawnItems);
-
-        // Initialize the draw control
-        const drawControl = new L.Control.Draw({
-            edit: { featureGroup: drawnItems },
-            draw: { polyline: false, marker: false, rectangle: false, circle: false, circlemarker: false }
-        });
-        map.addControl(drawControl);
-
-        // Add points to the map
-        let points = [];
-        fetch('/get_points')
-            .then(response => response.json())
-            .then(data => {
-                points = data;
-                points.forEach(point => {
-                    L.circleMarker(point.coordinates, {
-                        radius: 6,
-                        color: point.color,
-                    })
-                        .bindPopup(`<b>${point.name}</b>`)
-                        .addTo(map);
-                });
-
-                // Zoom to the bounding box of the points
-                if (points.length > 0) {
-                    const latitudes = points.map(p => p.coordinates[0]);
-                    const longitudes = points.map(p => p.coordinates[1]);
-                    const bounds = [
-                        [Math.min(...latitudes), Math.min(...longitudes)],
-                        [Math.max(...latitudes), Math.max(...longitudes)]
-                    ];
-                    map.fitBounds(bounds);
-                }
-            });
-
-        // Handle drawing new polygons
-        let selectedPolygon = null;
-        map.on(L.Draw.Event.CREATED, function (event) {
-            const layer = event.layer;
-            drawnItems.addLayer(layer);
-
-            // Right-click to edit polygon
-            layer.on('contextmenu', function (e) {
-                selectedPolygon = layer;
-                const coords = e.latlng;
-
-                const menu = document.getElementById('context-menu');
-                menu.style.top = `${e.originalEvent.clientY}px`;  // Position the menu based on mouse position
-                menu.style.left = `${e.originalEvent.clientX}px`;
-                menu.style.display = 'block';
-
-                document.getElementById('edit-name').onclick = function () {
-                    const newName = prompt("Enter new name for the polygon:");
-                    if (newName) {
-                        layer.options.name = newName;
-
-                        // Update all points inside this polygon
-                        const polygonCoordinates = layer.getLatLngs()[0];
-                        const pointsInside = points.filter(point => isPointInPolygon(point.coordinates, polygonCoordinates));
-
-                        pointsInside.forEach(point => {
-                            point.name = newName;
-                            point.color = layer.options.color || 'blue'; // Change color if needed
-                        });
-
-                        // Update backend
-                        fetch('/update_points', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ points: pointsInside })
-                        });
-
-                        // Update the map
-                        pointsInside.forEach(point => {
-                            L.circleMarker(point.coordinates, {
-                                radius: 6,
-                                color: point.color,
-                            })
-                                .bindPopup(`<b>${point.name}</b>`)
-                                .addTo(map);
-                        });
-                    }
-                    menu.style.display = 'none'; // Close menu
-                };
-
-                document.getElementById('edit-color').onclick = function () {
-                    const newColor = prompt("Enter new color for the polygon:");
-                    if (newColor) {
-                        layer.setStyle({ color: newColor });
-
-                        // Update all points inside this polygon
-                        const polygonCoordinates = layer.getLatLngs()[0];
-                        const pointsInside = points.filter(point => isPointInPolygon(point.coordinates, polygonCoordinates));
-
-                        pointsInside.forEach(point => {
-                            point.color = newColor;
-                        });
-
-                        // Update backend
-                        fetch('/update_points', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ points: pointsInside })
-                        });
-
-                        // Update the map
-                        pointsInside.forEach(point => {
-                            L.circleMarker(point.coordinates, {
-                                radius: 6,
-                                color: point.color,
-                            })
-                                .bindPopup(`<b>${point.name}</b>`)
-                                .addTo(map);
-                        });
-                    }
-                    menu.style.display = 'none'; // Close menu
-                };
-            });
-
-            // Count the number of points inside the polygon
-            const polygonCoordinates = layer.getLatLngs()[0];
-            const pointsInside = points.filter(point => isPointInPolygon(point.coordinates, polygonCoordinates));
-            document.getElementById('count').textContent = pointsInside.length;
-        });
-
-        // Check if a point is inside a polygon
-        function isPointInPolygon(point, polygon) {
-            let x = point[1], y = point[0];
-            let inside = false;
-            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-                let xi = polygon[i].lng, yi = polygon[i].lat;
-                let xj = polygon[j].lng, yj = polygon[j].lat;
-                let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-                if (intersect) inside = !inside;
-            }
-            return inside;
-        }
-
-        // Hide the context menu when clicking anywhere else
-        map.on('click', function () {
-            const menu = document.getElementById('context-menu');
-            menu.style.display = 'none';
-        });
-
-        // Export to CSV
-        document.getElementById('export').addEventListener('click', () => {
-            window.location.href = '/export_csv';
-        });
-
-        // Handle CSV file upload
-        // Handle CSV file upload
-document.getElementById('csv-upload').addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-
-    fetch('/upload_csv', {
-        method: 'POST',
-        body: formData,
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === "success") {
-            alert("CSV file uploaded and processed!");
-
-            // Clear existing points from the map before adding new ones
-            drawnItems.clearLayers();
-
-            // Add the points from the CSV to the map
-            points = data.points;
-            points.forEach(point => {
-                L.circleMarker(point.coordinates, {
-                    radius: 6,
-                    color: point.color || 'blue',
-                })
-                .bindPopup(`<b>${point.name}</b>`)
-                .addTo(map);
-            });
-
-            // Zoom to the bounding box of the newly added coordinates
-            if (points.length > 0) {
-                const latitudes = points.map(p => p.coordinates[0]);
-                const longitudes = points.map(p => p.coordinates[1]);
-                const bounds = [
-                    [Math.min(...latitudes), Math.min(...longitudes)],
-                    [Math.max(...latitudes), Math.max(...longitudes)]
-                ];
-                map.fitBounds(bounds);
-            }
-        } else {
-            alert("Failed to upload CSV. Please try again.");
-        }
-    })
-    .catch(error => {
-        alert("An error occurred during file upload. Please try again.");
-    });
-});
-
-    </script>
+    <!-- Load JS from Flask Static Folder -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
