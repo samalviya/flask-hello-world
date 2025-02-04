@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Map</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Leaflet Draw Plugin -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Load CSS from Flask Static Folder -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+    <!-- Map -->
+    <div id="map"></div>
+
+    <!-- Map Controls -->
+    <div class="map-controls">
+        <label for="csv-upload" class="file-label">📂 Upload CSV</label>
+        <input type="file" id="csv-upload" accept=".csv" class="file-input" />
+        <button id="export">📤 Export CSV</button>
+    </div>
+
+    <!-- Info Box -->
+    <div class="info">
+        📍 Points inside polygon: <span id="count">0</span>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="context-menu" class="context-menu">
+        <div class="context-menu-item" id="edit-name">✏ Edit Name</div>
+        <div class="context-menu-item" id="edit-color">🎨 Change Color</div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet Draw Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <!-- Load JS from Flask Static Folder -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
